@@ -69,50 +69,38 @@ public class BatchASTProcessor
 
         for (final List<String> batch : batches)
         {
-            executor.submit(new Callable<Void>()
-            {
-                @Override
-                public Void call() throws Exception
-                {
-                    ASTParser parser = ASTParser.newParser(AST.JLS8);
-                    parser.setBindingsRecovery(false);
-                    parser.setResolveBindings(true);
-                    Map<Object, Object> options = JavaCore.getOptions();
-                    JavaCore.setComplianceOptions(JavaCore.VERSION_1_8, options);
-                    // these options seem to slightly reduce the number of times that JDT aborts on compilation errors
-                    options.put(JavaCore.CORE_INCOMPLETE_CLASSPATH, "warning");
-                    options.put(JavaCore.COMPILER_PB_ENUM_IDENTIFIER, "warning");
-                    options.put(JavaCore.COMPILER_PB_FORBIDDEN_REFERENCE, "warning");
-                    options.put(JavaCore.CORE_CIRCULAR_CLASSPATH, "warning");
-                    options.put(JavaCore.COMPILER_PB_ASSERT_IDENTIFIER, "warning");
-                    options.put(JavaCore.COMPILER_PB_NULL_SPECIFICATION_VIOLATION, "warning");
-                    options.put(JavaCore.CORE_JAVA_BUILD_INVALID_CLASSPATH, "ignore");
-                    options.put(JavaCore.COMPILER_PB_NULL_ANNOTATION_INFERENCE_CONFLICT, "warning");
-                    options.put(JavaCore.CORE_OUTPUT_LOCATION_OVERLAPPING_ANOTHER_SOURCE, "warning");
-                    options.put(JavaCore.CORE_JAVA_BUILD_DUPLICATE_RESOURCE, "warning");
+            executor.submit((Callable<Void>) () -> {
+                ASTParser parser = ASTParser.newParser(AST.JLS9);
+                parser.setBindingsRecovery(false);
+                parser.setResolveBindings(true);
+                Map<String, String> options = JavaCore.getOptions();
+                JavaCore.setComplianceOptions(JavaCore.VERSION_1_8, options);
+                // these options seem to slightly reduce the number of times that JDT aborts on compilation errors
+                options.put(JavaCore.CORE_INCOMPLETE_CLASSPATH, "warning");
+                options.put(JavaCore.COMPILER_PB_ENUM_IDENTIFIER, "warning");
+                options.put(JavaCore.COMPILER_PB_FORBIDDEN_REFERENCE, "warning");
+                options.put(JavaCore.CORE_CIRCULAR_CLASSPATH, "warning");
+                options.put(JavaCore.COMPILER_PB_ASSERT_IDENTIFIER, "warning");
+                options.put(JavaCore.COMPILER_PB_NULL_SPECIFICATION_VIOLATION, "warning");
+                options.put(JavaCore.CORE_JAVA_BUILD_INVALID_CLASSPATH, "ignore");
+                options.put(JavaCore.COMPILER_PB_NULL_ANNOTATION_INFERENCE_CONFLICT, "warning");
+                options.put(JavaCore.CORE_OUTPUT_LOCATION_OVERLAPPING_ANOTHER_SOURCE, "warning");
+                options.put(JavaCore.CORE_JAVA_BUILD_DUPLICATE_RESOURCE, "warning");
 
-                    parser.setCompilerOptions(options);
-                    parser.setEnvironment(libraryPaths.toArray(new String[libraryPaths.size()]),
-                                sourcePaths.toArray(new String[sourcePaths.size()]),
-                                null,
-                                true);
+                parser.setCompilerOptions(options);
+                parser.setEnvironment(libraryPaths.toArray(new String[libraryPaths.size()]),
+                            sourcePaths.toArray(new String[sourcePaths.size()]),
+                            null,
+                            true);
 
-                    parser.createASTs(batch.toArray(new String[batch.size()]), encodings, bindingKeys, requestor, null);
-                    return null;
-                }
+                parser.createASTs(batch.toArray(new String[batch.size()]), encodings, bindingKeys, requestor, null);
+                return null;
             });
         }
 
         executor.shutdown();
 
-        return new BatchASTFuture()
-        {
-            @Override
-            public boolean isDone()
-            {
-                return executor.isTerminated();
-            }
-        };
+        return () -> executor.isTerminated();
     }
 
     private static List<List<String>> createBatches(Set<Path> sourceSet)

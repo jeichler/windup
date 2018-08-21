@@ -1,7 +1,6 @@
 package org.jboss.windup.reporting.category;
 
 import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * <p>

@@ -27,3 +27,5 @@ atlassian-ide-plugin.xml
 rexster.xml
 /tests/cache/
 *.ftl.html
+.vscode
+.history
