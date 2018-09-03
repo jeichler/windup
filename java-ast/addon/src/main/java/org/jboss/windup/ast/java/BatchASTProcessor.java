@@ -70,7 +70,7 @@ public class BatchASTProcessor
         for (final List<String> batch : batches)
         {
             executor.submit((Callable<Void>) () -> {
-                ASTParser parser = ASTParser.newParser(AST.JLS9);
+                ASTParser parser = ASTParser.newParser(AST.JLS10);
                 parser.setBindingsRecovery(false);
                 parser.setResolveBindings(true);
                 Map<String, String> options = JavaCore.getOptions();
