@@ -22,6 +22,10 @@
                 font-family: 'FontAwesome';
                 src: url('resources/fonts/fontawesome-webfont.woff') format('woff');
             }
+            @font-face {
+              font-family: 'PatternFlyIcons-webfont';
+              src: url('resources/fonts/PatternFlyIcons-webfont.woff') format('woff');
+            }
 
             * {
                 box-sizing: border-box;
