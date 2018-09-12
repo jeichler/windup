@@ -33,7 +33,7 @@
             }
 
             kubernetes-topology-graph {
-                border: 40px solid lightgray;
+                border: 0px solid lightgray;
                 position: fixed;
                 height: 100%;
                 width: 100%;
@@ -43,18 +43,15 @@
                 position: absolute;
                 bottom: 60px;
                 left: 60px;
-                right: 60px;
                 background-color: lightgray;
                 padding: 0 10px;
             }
 
             .display {
                 position: absolute;
-                top: 60px;
                 left: 60px;
                 right: 60px;
-                background-color: lightgray;
-                padding: 0px 10px;
+                padding: 20px 0px 10px;
             }
 
             #selected {
@@ -65,6 +62,7 @@
             .legend {
                 font-weight: bold;
             }
+
         </style>
         <link rel="stylesheet" href="resources/css/topology-graph.css"/>
         <script src="resources/js/angular.min.js"></script>
@@ -78,7 +76,7 @@
         <link href="resources/css/jquery-ui.min.css" rel="stylesheet" media="screen"/>
         <link href="resources/img/rhamt-icon-128.png" rel="shortcut icon" type="image/x-icon"/>
     </head>
-    <body role="document" class="application-graph">
+    <body role="document" class="application-graph" ng-app="appDependencies">
         <!-- Navbar -->
         <div id="main-navbar" class="navbar navbar-default navbar-fixed-top">
             <div class="wu-navbar-header navbar-header">
@@ -93,7 +91,7 @@
         </div>
         <!-- / Navbar -->
 
-        <div class="container-fluid" role="main">
+        <div class="container-fluid" role="main" style="padding-left: 0px;padding-right: 0px;">
 
             <kubernetes-topology-graph items="data.items" relations="data.relations" kinds="kinds">
             </kubernetes-topology-graph>
