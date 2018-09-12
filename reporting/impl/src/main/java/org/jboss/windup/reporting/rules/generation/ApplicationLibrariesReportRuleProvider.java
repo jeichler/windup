@@ -62,7 +62,7 @@ public class ApplicationLibrariesReportRuleProvider extends AbstractRuleProvider
             ApplicationReportService applicationReportService = new ApplicationReportService(context);
             ApplicationReportModel report = applicationReportService.create();
             report.setReportPriority(102);
-            report.setReportIconClass("glyphicon glyphicon-warning-sign");
+            report.setReportIconClass("glyphicon glyphicon-tree-deciduous");
             report.setTemplatePath(TEMPLATE_PATH);
             report.setTemplateType(TemplateType.FREEMARKER);
             report.setDisplayInApplicationReportIndex(true);
