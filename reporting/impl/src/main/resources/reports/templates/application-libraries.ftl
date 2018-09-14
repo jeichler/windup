@@ -4,6 +4,11 @@
     <#if reportModel.applicationReportIndexModel??>
         <#assign applicationReportIndexModel = reportModel.applicationReportIndexModel>
     </#if>
+    <#if reportModel.projectModel??>
+    	<script>
+    		var showExternalJars = true;
+    	</script>
+    </#if>
 
     <head>
         <meta charset="utf-8">
@@ -105,7 +110,7 @@
             <div class="controls">
 
                 <label class="legend">Applications: </label>
-                <kubernetes-topology-icon kind="ear">
+                <kubernetes-topology-icon kind="Ear">
                     <svg class="app-topology">
                         <use xlink:href="#vertex-Ear" x="15" y="15"></use>
                     </svg>
@@ -120,26 +125,28 @@
                 <label>WARs</label>
                 <br/>
                 <label class="legend">Embedded: </label>
-                <kubernetes-topology-icon kind="war">
+                <kubernetes-topology-icon kind="War">
                     <svg class="app-topology">
                         <use xlink:href="#vertex-War" x="15" y="15"></use>
                     </svg>
                 </kubernetes-topology-icon>
                 <label>WARs</label>
 
-                <kubernetes-topology-icon kind="jar">
+                <kubernetes-topology-icon kind="Jar">
                     <svg class="app-topology">
                         <use xlink:href="#vertex-Jar" x="15" y="15"></use>
                     </svg>
                 </kubernetes-topology-icon>
                 <label>JARs</label>
 
-                <kubernetes-topology-icon kind="ExternalJar">
-                    <svg class="app-topology">
-                        <use xlink:href="#vertex-ExternalJar" x="15" y="15"></use>
-                    </svg>
-                </kubernetes-topology-icon>
-                <label>3rd-party JARs&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; </label>
+ 				<#if reportModel.projectModel??>           
+	                <kubernetes-topology-icon kind="ExternalJar">
+	                    <svg class="app-topology">
+	                        <use xlink:href="#vertex-ExternalJar" x="15" y="15"></use>
+	                    </svg>
+	                </kubernetes-topology-icon>
+	                <label>3rd-party JARs&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; </label>
+                </#if>
             </div>
 
             <svg class="app-topology" hidden>
@@ -160,13 +167,19 @@
                         <circle r="15" fill="#fff" stroke="#aaa"></circle>
                         <text y="5" x="0.5" fill="#328CC1" font-family="FontAwesome" font-size="16px" text-anchor="middle">&#xf1b2;</text>
                     </g>
+                    <#if reportModel.projectModel??> 
                     <g class="ExternalJar" id="vertex-ExternalJar">
                         <circle r="15" fill="#fff" stroke="#aaa"></circle>
                         <text y="5" x="0.5" fill="#D9B310" font-family="FontAwesome" font-size="16px" text-anchor="middle">&#xf1b2;</text>
                     </g>
+                    </#if>
                 </defs>
             </svg>
 		<script src="resources/js/app-dependency-graph.js"></script>
+		<#if reportModel.projectModel??>
+        <script src="data/${reportModel.projectModel.rootFileModel.SHA1Hash}_app_dependencies_graph.js"></script>
+        <#else>
         <script src="data/app_dependencies_graph.js"></script>
+        </#if>
     </body>
 </html>

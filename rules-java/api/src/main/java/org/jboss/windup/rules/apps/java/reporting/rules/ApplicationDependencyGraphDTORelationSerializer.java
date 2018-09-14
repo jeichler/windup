@@ -5,10 +5,7 @@ import java.io.IOException;
 import org.jboss.windup.reporting.model.ApplicationDependencyGraphDTO;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 public class ApplicationDependencyGraphDTORelationSerializer extends StdSerializer<ApplicationDependencyGraphDTO> {
@@ -31,10 +28,10 @@ public class ApplicationDependencyGraphDTORelationSerializer extends StdSerializ
 		dto.getParents().forEach( item -> {
 			try {
 				gen.writeStartObject();
-				gen.writeStringField(SOURCE, dto.getName());
+				gen.writeStringField(SOURCE, dto.getSha1());
 				gen.writeStringField(TARGET, item);
 				gen.writeEndObject();
-				gen.writeRaw("," + System.lineSeparator());
+				gen.writeRaw(",");
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -42,17 +39,4 @@ public class ApplicationDependencyGraphDTORelationSerializer extends StdSerializ
 		});
 		
 	}
-	
-	public static void main(String[] args) throws JsonProcessingException {
-		ObjectMapper mapper = new ObjectMapper();
-		SimpleModule module = new SimpleModule();
-		module.addSerializer(ApplicationDependencyGraphDTO.class, new ApplicationDependencyGraphDTORelationSerializer());
-		mapper.registerModule(module);
-		
-		ApplicationDependencyGraphDTO dto = new ApplicationDependencyGraphDTO();
-		dto.addParent("brownie.ear");
-		dto.addParent("kekse.ear");
-		System.out.println(mapper.writeValueAsString(dto));
-	}
-
 }

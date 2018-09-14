@@ -3,18 +3,22 @@ function app_dependencies(dataset) {
 	datasets.push(dataset);
 }
 
+var kinds = {
+  Ear: '#vertex-Ear',
+  War: '#vertex-War',
+  WarApp: '#vertex-WarApp',
+  Jar: '#vertex-Jar',
+}
+if (typeof showExternalJars !== 'undefined' && showExternalJars !== null && showExternalJars == true) {
+  kinds.ExternalJar = '#vertex-ExternalJar';
+}
+
+
 angular.module('appDependencies', ['applicationUI'])
   .run(function($rootScope) {
         var index = 0;
         $rootScope.data = datasets[index];
-
-        $rootScope.kinds = {
-          ear: '#vertex-Ear',
-          war: '#vertex-War',
-          WarApp: '#vertex-WarApp',
-          ExternalJar: '#vertex-ExternalJar',
-          jar: '#vertex-Jar',
-        };
+        $rootScope.kinds = kinds;
 
         $rootScope.poke = function() {
            index += 1;

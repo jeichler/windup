@@ -52,11 +52,18 @@
         var force = options["force"];
 
         /* Allow the force to be passed in, default if not */
+        if (typeof showExternalJars !== 'undefined' && showExternalJars !== null && showExternalJars == true) {
+        	   var charge = -800;
+        	   var linkDistance = 80
+        } else {
+        	var charge = -300;
+     	   	var linkDistance = 50
+        }
         if (!force) {
             force = d3.layout.force()
-                .charge(-800)
-                .gravity(0.2)
-                .linkDistance(80);
+	            .charge(charge)
+	            .gravity(0.2)
+	            .linkDistance(linkDistance);
         }
 
         var drag = force.drag();
@@ -310,7 +317,7 @@
                                 added.attr("class", function(d) { return d.item.kind; });
                                 added.append("use").attr("xlink:href", icon);
                                 added.append("title");
-                                vertices.selectAll("title").text(function(d) { return d.item.metadata.name+"\n\nJDK:"+ d.item.metadata.jdk+"\nSize:"+d.item.metadata.size+"\nClasses:"+d.item.metadata.classes; });
+                                vertices.selectAll("title").text(function(d) { return d.item.metadata.name });//+"\n\nJDK:"+ d.item.metadata.jdk+"\nSize:"+d.item.metadata.size+"\nClasses:"+d.item.metadata.classes; });
                                 vertices.classed("weak", weak);
                             }
                             graph.select();

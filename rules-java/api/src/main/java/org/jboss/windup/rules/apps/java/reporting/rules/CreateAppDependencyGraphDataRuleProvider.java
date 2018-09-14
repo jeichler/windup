@@ -1,8 +1,11 @@
 package org.jboss.windup.rules.apps.java.reporting.rules;
 
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import org.jboss.windup.config.AbstractRuleProvider;
@@ -12,6 +15,9 @@ import org.jboss.windup.config.metadata.RuleMetadata;
 import org.jboss.windup.config.operation.GraphOperation;
 import org.jboss.windup.config.phase.ReportRenderingPhase;
 import org.jboss.windup.graph.GraphContext;
+import org.jboss.windup.graph.model.ProjectModel;
+import org.jboss.windup.graph.model.resource.FileModel;
+import org.jboss.windup.graph.service.WindupConfigurationService;
 import org.jboss.windup.reporting.model.ApplicationDependencyGraphDTO;
 import org.jboss.windup.reporting.service.ApplicationDependencyService;
 import org.jboss.windup.reporting.service.ReportService;
@@ -32,13 +38,15 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 @RuleMetadata(phase = ReportRenderingPhase.class)
 public class CreateAppDependencyGraphDataRuleProvider extends AbstractRuleProvider {
 
-	public static final String APP_DEPENDENCY_GRAPH_JS = "app_dependencies_graph.js";
+	private static final String APP_DEPENDENCY_GRAPH_JS = "app_dependencies_graph.js";
 
 	private static final String JS_DATA_FUNCTION_NAME = "app_dependencies";
 	private static final String NEWLINE = System.lineSeparator();
 
-	private static final ObjectMapper ITEMS_OBJECTMAPPER = getObjectMapperForItems(ApplicationDependencyGraphDTOItemSerializer.class);
-	private static final ObjectMapper RELATIONS_OBJECTMAPPER = getObjectMapperForItems(ApplicationDependencyGraphDTORelationSerializer.class);
+	private static final ObjectMapper ITEMS_OBJECTMAPPER = getObjectMapperForItems(
+			ApplicationDependencyGraphDTOItemSerializer.class);
+	private static final ObjectMapper RELATIONS_OBJECTMAPPER = getObjectMapperForItems(
+			ApplicationDependencyGraphDTORelationSerializer.class);
 
 	@Override
 	public Configuration getConfiguration(RuleLoaderContext ruleLoaderContext) {
@@ -50,45 +58,74 @@ public class CreateAppDependencyGraphDataRuleProvider extends AbstractRuleProvid
 		});
 	}
 
+	// TODO: this is too slow
 	private void generateData(GraphRewrite event) {
 		final GraphContext graphContext = event.getGraphContext();
 		final ApplicationDependencyService appDependencyService = new ApplicationDependencyService(graphContext);
 		final ReportService reportService = new ReportService(graphContext);
 
-		final Map<String, ApplicationDependencyGraphDTO> appDeps = appDependencyService.getDependenciesGraphSet();
+		final Map<String, ApplicationDependencyGraphDTO> appDeps = appDependencyService.getAllDependenciesGraphData();
 
 		try {
-			Path dataDirectory = reportService.getReportDataDirectory();
-
-			final Path appDependencyGraphPath = dataDirectory.resolve(APP_DEPENDENCY_GRAPH_JS);
-			try (FileWriter appDependencyGraphDataWriter = new FileWriter(appDependencyGraphPath.toFile())) {
-
-				appDependencyGraphDataWriter.write(JS_DATA_FUNCTION_NAME + "({" + NEWLINE + "\"items\": {");
-				// items section
-				appDeps.values().forEach(value -> {
-					try {
-						appDependencyGraphDataWriter.write(ITEMS_OBJECTMAPPER.writeValueAsString(value) + "," + NEWLINE);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				});
-
-				// relations section
-				appDependencyGraphDataWriter.write("}, \"relations\":[");
-				appDeps.values().forEach(value -> {
-					try {
-						appDependencyGraphDataWriter.write(RELATIONS_OBJECTMAPPER.writeValueAsString(value));
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				});
-				appDependencyGraphDataWriter.write("]});");
+			List<FileModel> inputPaths = WindupConfigurationService.getConfigurationModel(graphContext).getInputPaths();
+			
+			// all apps
+			if (inputPaths.size() > 1) {
+				writeJsonData(APP_DEPENDENCY_GRAPH_JS, reportService, appDeps);
 			}
+
+			// per single app
+			inputPaths.forEach( inputPath -> {
+				final ProjectModel rootProjectModel = inputPath.getProjectModel();
+				Map<String, ApplicationDependencyGraphDTO> singleAppDependencies = null;
+				if (inputPaths.size() > 1) {
+					singleAppDependencies = appDependencyService.getDependenciesGraphDataByInputApp(rootProjectModel);
+				} else {
+					singleAppDependencies = appDeps;
+				}
+				try {
+					writeJsonData(rootProjectModel.getRootFileModel().getSHA1Hash() + "_" + APP_DEPENDENCY_GRAPH_JS, reportService, singleAppDependencies);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			});
+			
 		} catch (Exception e) {
 			throw new WindupException("Error serializing app dependency graph json due to: " + e.getMessage(), e);
 		}
+	}
+
+	private void writeJsonData(final String jsFileName,final ReportService reportService, final Map<String, ApplicationDependencyGraphDTO> appDeps) throws IOException {
+		Path dataDirectory = reportService.getReportDataDirectory();
+
+		final Path appDependencyGraphPath = dataDirectory.resolve(jsFileName);
+		final List<String> synchronizedJson = Collections.synchronizedList(new ArrayList<>());
+		
+		synchronizedJson.add(JS_DATA_FUNCTION_NAME + "({" + NEWLINE + "\"items\": {");
+		
+		// items section
+		appDeps.values().parallelStream().filter(value -> value != null && value.getSha1() != null).forEach(value -> {
+			try {
+				synchronizedJson.add(ITEMS_OBJECTMAPPER.writeValueAsString(value) + ",");
+			} catch (JsonProcessingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
+		
+		// relations section
+		synchronizedJson.add("}, \"relations\":[");
+		appDeps.values().parallelStream().forEach(value -> {
+			try {
+				synchronizedJson.add(RELATIONS_OBJECTMAPPER.writeValueAsString(value));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
+		synchronizedJson.add("]});");
+		Files.write(appDependencyGraphPath, synchronizedJson);
 	}
 
 	private static ObjectMapper getObjectMapperForItems(Class<? extends StdSerializer<ApplicationDependencyGraphDTO>> clazz) {
@@ -100,10 +137,9 @@ public class CreateAppDependencyGraphDataRuleProvider extends AbstractRuleProvid
 			return mapper;
 		} catch (Exception e) {
 			// instead of failing we just return a regular mapper.
-			// this might corrupt the app graph report, but the analysis shouldn't fail in
-			// that case
+			// this might corrupt the app graph report,
+			//but the analysis shouldn't fail in  that case
 			return new ObjectMapper();
 		}
-
-	}
+	}	
 }
